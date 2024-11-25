@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1024786031513",
+    "project_id": "super-gmail-app",
+    "storage_bucket": "super-gmail-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1024786031513:android:ef5a82d718cac33b4b2908",
+        "android_client_info": {
+          "package_name": "com.gmail.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBa3GSWPGKu2_OMe5e26BcJi3X1fr2FlDQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
