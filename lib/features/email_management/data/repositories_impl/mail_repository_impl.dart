@@ -1,6 +1,6 @@
-import 'package:gmail_app/config/resources/date_state.dart';
 import 'package:gmail_app/features/email_management/data/data_sources/remote/mail_service.dart';
 import 'package:gmail_app/features/email_management/data/models/mail.dart';
+import 'package:gmail_app/features/email_management/domain/entities/mail.dart';
 import 'package:gmail_app/features/email_management/domain/repositories/mail_repository.dart';
 
 class MailRepositoryImpl implements MailRepository {
@@ -9,13 +9,21 @@ class MailRepositoryImpl implements MailRepository {
   MailRepositoryImpl(this._mailService);
 
   @override
-  Future<DataState<List<MailModel>>> getMails(String userId) async {
+  Future<List<MailModel>> getMails() async {
     try {
-      final mails = await _mailService.getMails(userId);
-      print(mails);
-      return DataSuccess<List<MailModel>>(mails);
+      final mails = await _mailService.getMails();
+      return mails;
     } catch (e) {
-      return DataFailed(e is Exception ? e : Exception('Unknown error'));
+      throw Exception(e);
+    }
+  }
+
+  @override
+  Future<void> sendMail(MailEntity mail) async {
+    try {
+      await _mailService.sendMail(MailModel.fromEntity(mail, null));
+    } catch (e) {
+      throw Exception(e);
     }
   }
 }

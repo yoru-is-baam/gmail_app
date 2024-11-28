@@ -1,10 +1,11 @@
+import 'package:gmail_app/core/session_manager.dart';
 import 'package:gmail_app/features/email_management/domain/entities/mail.dart';
 
 class MailModel extends MailEntity {
   final String userId;
   final List<String>? labelIds;
 
-  const MailModel({
+  MailModel({
     required super.id,
     required super.to,
     super.cc,
@@ -18,6 +19,7 @@ class MailModel extends MailEntity {
     super.isInTrash,
     required this.userId,
     this.labelIds,
+    super.createdAt,
   });
 
   factory MailModel.fromMap(Map<String, dynamic> map) {
@@ -38,6 +40,7 @@ class MailModel extends MailEntity {
       userId: map['userId'],
       labelIds:
           map['labelIds'] != null ? List<String>.from(map['labelIds']) : null,
+      createdAt: map['createdAt'],
     );
   }
 
@@ -56,12 +59,12 @@ class MailModel extends MailEntity {
       'isInTrash': isInTrash,
       'userId': userId,
       'labelIds': labelIds,
+      'createdAt': createdAt,
     };
   }
 
   factory MailModel.fromEntity(
     MailEntity entity,
-    String userId,
     List<String>? labelIds,
   ) {
     return MailModel(
@@ -76,8 +79,9 @@ class MailModel extends MailEntity {
       isStarred: entity.isStarred,
       isRead: entity.isRead,
       isInTrash: entity.isInTrash,
-      userId: userId,
+      userId: SessionManager.currentUserId!,
       labelIds: labelIds,
+      createdAt: entity.createdAt,
     );
   }
 }

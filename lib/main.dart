@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:get_it/get_it.dart';
-import 'package:gmail_app/features/email_management/domain/repositories/mail_repository.dart';
+import 'package:gmail_app/config/routes/routes.dart';
+import 'package:gmail_app/config/theme/app_themes.dart';
+import 'package:gmail_app/features/email_management/presentation/pages/home_screen.dart';
 import 'package:gmail_app/injection_container.dart';
 import 'firebase_options.dart';
 
@@ -20,24 +21,10 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
-      ),
-      home: HomeScreen(),
+      debugShowCheckedModeBanner: false,
+      theme: theme(),
+      onGenerateRoute: AppRoutes.onGenerateRoutes,
+      home: const HomeScreen(),
     );
-  }
-}
-
-class HomeScreen extends StatelessWidget {
-  final _mailRepository = GetIt.instance.get<MailRepository>();
-
-  HomeScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    print(_mailRepository.getMails("1020120301230120"));
-    return const Placeholder();
   }
 }
