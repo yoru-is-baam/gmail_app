@@ -1,30 +1,45 @@
 import 'package:flutter/material.dart';
-import 'package:gmail_app/common/presentation/widgets/avatar.dart';
+import 'package:gmail_app/core/utils/get_random_color.dart';
 
 class EmailChip extends StatelessWidget {
-  const EmailChip({super.key});
+  final String? imageUrl;
+  final String email;
+  final void Function() onDeleted;
+
+  const EmailChip({
+    super.key,
+    this.imageUrl,
+    required this.email,
+    required this.onDeleted,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Chip(
+      onDeleted: onDeleted,
       backgroundColor: Theme.of(context).primaryColor,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
       ),
-      avatar: const Avatar(
-        imageUrl:
-            "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRokEYt0yyh6uNDKL8uksVLlhZ35laKNQgZ9g&s",
-        width: 20,
-        height: 20,
+      avatar: CircleAvatar(
+        backgroundColor: getRandomColor(),
+        child: Text(
+          email[0].toUpperCase(),
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 16,
+          ),
+        ),
       ),
       label: Container(
         constraints: const BoxConstraints(
           maxWidth: 200,
         ),
-        child: const Text(
-          'hoanghuynhtuankiet@gmail.com',
+        child: Text(
+          email,
           overflow: TextOverflow.ellipsis,
-          style: TextStyle(
+          style: const TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 13,
           ),

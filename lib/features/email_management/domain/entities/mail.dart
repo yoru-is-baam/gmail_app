@@ -15,7 +15,7 @@ class MailEntity extends Equatable {
   final DateTime? createdAt;
 
   MailEntity({
-    required this.id,
+    this.id,
     required this.to,
     this.cc,
     this.bcc,

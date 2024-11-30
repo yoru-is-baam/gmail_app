@@ -2,6 +2,7 @@ import 'package:gmail_app/features/email_management/data/data_sources/remote/mai
 import 'package:gmail_app/features/email_management/data/models/mail.dart';
 import 'package:gmail_app/features/email_management/domain/entities/mail.dart';
 import 'package:gmail_app/features/email_management/domain/repositories/mail_repository.dart';
+import 'package:gmail_app/config/resources/date_state.dart';
 
 class MailRepositoryImpl implements MailRepository {
   final MailService _mailService;
@@ -19,11 +20,13 @@ class MailRepositoryImpl implements MailRepository {
   }
 
   @override
-  Future<void> sendMail(MailEntity mail) async {
+  Future<DataState<void>> sendMail(MailEntity mail) async {
     try {
       await _mailService.sendMail(MailModel.fromEntity(mail, null));
+      return const DataSuccess<void>();
     } catch (e) {
-      throw Exception(e);
+      print(e);
+      return DataFailed<void>(Exception('Failed to send mail: $e'));
     }
   }
 }
