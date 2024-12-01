@@ -35,7 +35,6 @@ class RecipientFormField extends StatelessWidget {
                 );
               }),
               TextFormField(
-                cursorColor: const Color(0xFF005e8e),
                 decoration: const InputDecoration(
                   border: InputBorder.none,
                 ),

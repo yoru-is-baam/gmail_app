@@ -1,6 +1,7 @@
 import 'package:gmail_app/features/email_management/data/data_sources/remote/mail_service.dart';
 import 'package:gmail_app/features/email_management/data/models/mail.dart';
-import 'package:gmail_app/features/email_management/domain/entities/mail.dart';
+import 'package:gmail_app/features/email_management/data/models/sender_mail.dart';
+import 'package:gmail_app/features/email_management/domain/entities/sender_mail.dart';
 import 'package:gmail_app/features/email_management/domain/repositories/mail_repository.dart';
 import 'package:gmail_app/config/resources/date_state.dart';
 
@@ -10,23 +11,56 @@ class MailRepositoryImpl implements MailRepository {
   MailRepositoryImpl(this._mailService);
 
   @override
-  Future<List<MailModel>> getMails() async {
+  Future<DataState<List<MailModel>>> getMails({
+    bool? isStarred,
+    bool? isDraft,
+    bool? isInTrash,
+  }) async {
     try {
-      final mails = await _mailService.getMails();
-      return mails;
+      final mails = await _mailService.getMails(
+        isStarred: isStarred,
+        isDraft: isDraft,
+        isInTrash: isInTrash,
+      );
+      return DataSuccess<List<MailModel>>(mails);
     } catch (e) {
-      throw Exception(e);
+      return DataFailed(Exception('Failed to get mails: $e'));
     }
   }
 
   @override
-  Future<DataState<void>> sendMail(MailEntity mail) async {
+  Future<DataState<void>> sendMail(SenderMailEntity mail) async {
     try {
-      await _mailService.sendMail(MailModel.fromEntity(mail, null));
+      await _mailService.sendMail(SenderMailModel.fromEntity(mail, null));
       return const DataSuccess<void>();
     } catch (e) {
-      print(e);
-      return DataFailed<void>(Exception('Failed to send mail: $e'));
+      return DataFailed(Exception('Failed to send mail: $e'));
     }
+  }
+
+  @override
+  Future<DataState<void>> updateMail({
+    required String mailId,
+    required Map<String, dynamic> fields,
+  }) async {
+    try {
+      await _mailService.updateMail(mailId, fields);
+      return const DataSuccess<void>();
+    } catch (e) {
+      return DataFailed(Exception('Failed to update mail: $e'));
+    }
+  }
+
+  @override
+  Stream<List<MailModel>> getReceivedMails({
+    bool? isStarred,
+    bool? isDraft,
+    bool? isInTrash,
+  }) {
+    return _mailService.getReceivedMails(
+      isStarred: isStarred,
+      isDraft: isDraft,
+      isInTrash: isInTrash,
+    );
   }
 }

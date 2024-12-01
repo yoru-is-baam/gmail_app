@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:gmail_app/common/presentation/widgets/avatar.dart';
+import 'package:gmail_app/core/utils/date_time_util.dart';
 import 'package:gmail_app/features/email_management/presentation/widgets/mail_list/mail_list_item_text.dart';
 import 'package:gmail_app/features/email_management/presentation/widgets/mail_list/star_toggle_button.dart';
 
@@ -8,6 +9,8 @@ class MailListItem extends StatelessWidget {
   final String name;
   final String? subject;
   final String? body;
+  final DateTime sentAt;
+  final void Function()? onTap;
 
   const MailListItem({
     super.key,
@@ -15,6 +18,8 @@ class MailListItem extends StatelessWidget {
     required this.name,
     this.subject,
     this.body,
+    required this.sentAt,
+    this.onTap,
   });
 
   @override
@@ -45,8 +50,8 @@ class MailListItem extends StatelessWidget {
                       fontSize: 16,
                       isRead: true,
                     ),
-                    const MailListItemText(
-                      text: "20:14",
+                    MailListItemText(
+                      text: DateTimeUtil.formatBasedOnTodayOrYesterday(sentAt),
                       fontSize: 13,
                       fontWeight: FontWeight.w400,
                     ),
@@ -65,7 +70,9 @@ class MailListItem extends StatelessWidget {
                         children: [
                           MailListItemText(
                             isRead: true,
-                            text: subject ?? "(no subject)",
+                            text: subject == null || subject!.isEmpty
+                                ? "(no subject)"
+                                : subject!,
                           ),
                           const SizedBox(
                             height: 3,
@@ -80,7 +87,7 @@ class MailListItem extends StatelessWidget {
                       width: 28,
                     ),
                     StarToggleButton(
-                      onTap: () => {},
+                      onTap: onTap,
                       isStarred: isStarred,
                     )
                   ],

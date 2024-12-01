@@ -6,6 +6,9 @@ ThemeData theme() {
     scaffoldBackgroundColor: const Color(0xFFf6faff),
     fontFamily: 'Roboto',
     appBarTheme: appBarTheme(),
+    textSelectionTheme: const TextSelectionThemeData(
+      cursorColor: Color(0xFF005e8e),
+    ),
   );
 }
 

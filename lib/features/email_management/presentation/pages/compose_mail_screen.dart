@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:gmail_app/core/utils/show_custom_dialog.dart';
-import 'package:gmail_app/features/email_management/domain/entities/mail.dart';
+import 'package:gmail_app/core/utils/show_custom_snackbar.dart';
+import 'package:gmail_app/features/email_management/domain/entities/sender_mail.dart';
 import 'package:gmail_app/features/email_management/presentation/bloc/mail/remote/remote_mail_bloc.dart';
 import 'package:gmail_app/features/email_management/presentation/bloc/mail/remote/remote_mail_event.dart';
 import 'package:gmail_app/features/email_management/presentation/bloc/mail/remote/remote_mail_state.dart';
@@ -10,7 +11,6 @@ import 'package:gmail_app/features/email_management/presentation/widgets/compose
 import 'package:gmail_app/features/email_management/presentation/widgets/compose_mail/label_form_field.dart';
 import 'package:gmail_app/features/email_management/presentation/widgets/compose_mail/padded_widget.dart';
 import 'package:gmail_app/features/email_management/presentation/widgets/compose_mail/recipient_form_field.dart';
-import 'package:gmail_app/injection_container.dart';
 
 class ComposeMailScreen extends HookWidget {
   const ComposeMailScreen({super.key});
@@ -23,6 +23,8 @@ class ComposeMailScreen extends HookWidget {
     final toController = useTextEditingController();
     final ccController = useTextEditingController();
     final bccController = useTextEditingController();
+    final subjectController = useTextEditingController();
+    final bodyController = useTextEditingController();
 
     final isAdvancedRecipientFormFieldOpen = useState<bool>(false);
 
@@ -50,8 +52,19 @@ class ComposeMailScreen extends HookWidget {
       controller.clear();
     }
 
-    return BlocProvider(
-      create: (_) => RemoteMailBloc(sl()),
+    return BlocListener<RemoteMailBloc, RemoteMailState>(
+      listener: (context, state) {
+        if (state is RemoteMailSent) {
+          Navigator.pop(context);
+          context.read<RemoteMailBloc>().add(const GetInboxMails());
+          showCustomSnackbar(context, "Sent mail successfully!");
+        } else if (state is RemoteMailError) {
+          showCustomDialog(
+            context,
+            'Failed to send mail: ${state.error}',
+          );
+        }
+      },
       child: Scaffold(
         appBar: AppBar(
           leading: IconButton(
@@ -65,39 +78,22 @@ class ComposeMailScreen extends HookWidget {
               onPressed: () {},
               icon: const Icon(Icons.attachment_outlined),
             ),
-            BlocConsumer<RemoteMailBloc, RemoteMailState>(
-              listener: (context, state) {
-                if (state is RemoteMailDone) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Mail sent successfully!')),
+            IconButton(
+              onPressed: () {
+                if (toRecipients.value.isEmpty) {
+                  showCustomDialog(context, "Add at least one recipient.");
+                } else {
+                  final mail = SenderMailEntity(
+                    to: toRecipients.value,
+                    cc: ccRecipients.value,
+                    bcc: bccRecipients.value,
+                    subject: subjectController.text.trim(),
+                    body: bodyController.text.trim(),
                   );
-                } else if (state is RemoteMailError) {
-                  print(state.error);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Failed to send mail: ${state.error}'),
-                    ),
-                  );
+                  BlocProvider.of<RemoteMailBloc>(context).add(SendMail(mail));
                 }
               },
-              builder: (context, state) {
-                return IconButton(
-                  onPressed: () {
-                    if (toRecipients.value.isEmpty) {
-                      showCustomDialog(context, "Add at least one recipient.");
-                    } else {
-                      final mail = MailEntity(
-                        to: toRecipients.value,
-                        cc: ccRecipients.value,
-                        bcc: bccRecipients.value,
-                      );
-                      BlocProvider.of<RemoteMailBloc>(context)
-                          .add(SendMail(mail));
-                    }
-                  },
-                  icon: const Icon(Icons.send),
-                );
-              },
+              icon: const Icon(Icons.send),
             ),
             PopupMenuButton<String>(
               icon: const Icon(Icons.more_vert),
@@ -211,7 +207,7 @@ class ComposeMailScreen extends HookWidget {
             const DividerFormField(),
             PaddedWidget(
               child: TextFormField(
-                cursorColor: const Color(0xFF005e8e),
+                controller: subjectController,
                 decoration: const InputDecoration(
                   border: InputBorder.none,
                   hintText: "Subject",
@@ -224,7 +220,7 @@ class ComposeMailScreen extends HookWidget {
             const DividerFormField(),
             PaddedWidget(
               child: TextFormField(
-                cursorColor: const Color(0xFF005e8e),
+                controller: bodyController,
                 maxLines: null,
                 keyboardType: TextInputType.multiline,
                 decoration: const InputDecoration(

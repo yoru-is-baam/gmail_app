@@ -1,7 +1,10 @@
 import 'package:equatable/equatable.dart';
 
-class MailEntity extends Equatable {
+class SenderMailEntity extends Equatable {
   final String? id;
+  final List<String> to;
+  final List<String>? cc;
+  final List<String>? bcc;
   final String? subject;
   final String? body;
   final List<String>? attachments;
@@ -11,8 +14,11 @@ class MailEntity extends Equatable {
   final bool isInTrash;
   final DateTime? createdAt;
 
-  MailEntity({
+  SenderMailEntity({
     this.id,
+    required this.to,
+    this.cc,
+    this.bcc,
     this.subject,
     this.body,
     this.attachments,
@@ -24,5 +30,5 @@ class MailEntity extends Equatable {
   }) : createdAt = createdAt ?? DateTime.now();
 
   @override
-  List<Object?> get props => [id];
+  List<Object?> get props => [id, to];
 }

@@ -1,4 +1,4 @@
-import 'package:gmail_app/core/session_manager.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:gmail_app/features/email_management/domain/entities/mail.dart';
 
 class MailModel extends MailEntity {
@@ -6,10 +6,7 @@ class MailModel extends MailEntity {
   final List<String>? labelIds;
 
   MailModel({
-    required super.id,
-    required super.to,
-    super.cc,
-    super.bcc,
+    super.id,
     super.subject,
     super.body,
     super.attachments,
@@ -22,66 +19,28 @@ class MailModel extends MailEntity {
     super.createdAt,
   });
 
-  factory MailModel.fromMap(Map<String, dynamic> map) {
-    return MailModel(
-      id: map["id"],
-      to: List<String>.from(map['to']),
-      cc: map['cc'] != null ? List<String>.from(map['cc']) : null,
-      bcc: map['bcc'] != null ? List<String>.from(map['bcc']) : null,
-      subject: map['subject'],
-      body: map['body'],
-      attachments: map['attachments'] != null
-          ? List<String>.from(map['attachments'])
-          : null,
-      isDraft: map['isDraft'],
-      isStarred: map['isStarred'],
-      isRead: map['isRead'],
-      isInTrash: map['isInTrash'],
-      userId: map['userId'],
-      labelIds:
-          map['labelIds'] != null ? List<String>.from(map['labelIds']) : null,
-      createdAt: map['createdAt'],
-    );
-  }
-
-  Map<String, dynamic> toMap() {
-    return {
-      'id': id,
-      'to': to,
-      'cc': cc,
-      'bcc': bcc,
-      'subject': subject,
-      'body': body,
-      'attachments': attachments,
-      'isDraft': isDraft,
-      'isStarred': isStarred,
-      'isRead': isRead,
-      'isInTrash': isInTrash,
-      'userId': userId,
-      'labelIds': labelIds,
-      'createdAt': createdAt,
-    };
-  }
-
-  factory MailModel.fromEntity(
-    MailEntity entity,
-    List<String>? labelIds,
+  factory MailModel.fromDocument(
+    DocumentSnapshot senderDoc,
+    DocumentSnapshot recipientDoc,
   ) {
+    var senderMap = senderDoc.data() as Map<String, dynamic>;
+    var recipientMap = senderDoc.data() as Map<String, dynamic>;
+
     return MailModel(
-      id: entity.id,
-      to: entity.to,
-      cc: entity.cc,
-      bcc: entity.bcc,
-      subject: entity.subject,
-      body: entity.body,
-      attachments: entity.attachments,
-      isDraft: entity.isDraft,
-      isStarred: entity.isStarred,
-      isRead: entity.isRead,
-      isInTrash: entity.isInTrash,
-      userId: SessionManager.currentUserId!,
-      labelIds: labelIds,
-      createdAt: entity.createdAt,
+      id: senderDoc.id,
+      subject: senderMap['subject'],
+      body: senderMap['body'],
+      attachments: senderMap['attachments'] != null
+          ? List<String>.from(senderMap['attachments'])
+          : null,
+      isStarred: recipientMap['isStarred'],
+      isRead: recipientMap['isRead'],
+      isInTrash: recipientMap['isInTrash'],
+      userId: recipientMap['userId'],
+      labelIds: recipientMap['labelIds'] != null
+          ? List<String>.from(recipientMap['labelIds'])
+          : null,
+      createdAt: (senderMap['createdAt'] as Timestamp).toDate(),
     );
   }
 }

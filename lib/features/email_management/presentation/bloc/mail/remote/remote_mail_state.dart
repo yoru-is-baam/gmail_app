@@ -22,6 +22,10 @@ class RemoteMailDone extends RemoteMailState {
   const RemoteMailDone(List<MailEntity>? mails) : super(mails: mails);
 }
 
+class RemoteMailSent extends RemoteMailState {
+  const RemoteMailSent();
+}
+
 class RemoteMailError extends RemoteMailState {
   const RemoteMailError(Exception error) : super(error: error);
 }

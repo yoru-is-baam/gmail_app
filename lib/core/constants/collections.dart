@@ -1,1 +1,2 @@
-const mailCollection = "mails";
+const senderMailCollection = "senderMails";
+const recipientMailCollection = "recipientMails";
