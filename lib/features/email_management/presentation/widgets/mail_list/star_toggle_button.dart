@@ -17,7 +17,7 @@ class StarToggleButton extends StatelessWidget {
       child: isStarred
           ? const Icon(
               Icons.star_outlined,
-              color: Color(0xFFF4B400),
+              color: Color(0xFF0075b1),
             )
           : const Icon(Icons.star_border_outlined),
     );

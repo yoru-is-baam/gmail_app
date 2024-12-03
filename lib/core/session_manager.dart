@@ -10,7 +10,7 @@ class SessionManager {
   static Stream<User?> get authStateChanges => _auth.authStateChanges();
 
   // static String? get currentUserId => _auth.currentUser?.uid;
-  static String? get currentUserId => "12312312";
+  static String? get currentUserId => "123";
 
   static String? get currentEmail => "yoruisbaam@gmail.com";
 

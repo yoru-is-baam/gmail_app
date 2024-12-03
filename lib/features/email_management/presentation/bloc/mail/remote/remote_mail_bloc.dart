@@ -1,46 +1,78 @@
-import 'dart:async';
-import 'dart:developer';
-
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gmail_app/config/resources/date_state.dart';
-import 'package:gmail_app/features/email_management/domain/usecases/get_received_mails.dart';
+import 'package:gmail_app/features/email_management/domain/entities/mail.dart';
+import 'package:gmail_app/features/email_management/domain/usecases/get_inbox_mails.dart';
+import 'package:gmail_app/features/email_management/domain/usecases/get_mails.dart';
+import 'package:gmail_app/features/email_management/domain/usecases/get_sent_mails.dart';
+import 'package:gmail_app/features/email_management/domain/usecases/params/get_mails_params.dart';
+import 'package:gmail_app/features/email_management/domain/usecases/params/get_sent_mails_params.dart';
+import 'package:gmail_app/features/email_management/domain/usecases/save_as_draft.dart';
 import 'package:gmail_app/features/email_management/domain/usecases/send_mail.dart';
-import 'package:gmail_app/features/email_management/domain/usecases/update_mail.dart';
+import 'package:gmail_app/features/email_management/domain/usecases/update_received_mail.dart';
 import 'package:gmail_app/features/email_management/presentation/bloc/mail/remote/remote_mail_event.dart';
 import 'package:gmail_app/features/email_management/presentation/bloc/mail/remote/remote_mail_state.dart';
 
 class RemoteMailBloc extends Bloc<RemoteMailEvent, RemoteMailState> {
-  final GetReceivedMailsUseCase _getReceivedMailsUseCase;
-  // final GetMailsUseCase _getMailsUseCase;
+  final GetInboxMailsUseCase _getInboxMailsUseCase;
+  final GetSentMailsUseCase _getSentMailsUseCase;
+  final GetMailsUseCase _getMailsUseCase;
   final SendMailUseCase _sendMailUseCase;
-  final UpdateMailsUseCase _updateMailsUseCase;
+  final SaveAsDraftUseCase _saveAsDraftUseCase;
+  final UpdateReceivedMailUseCase _updateReceivedMailUseCase;
 
   RemoteMailBloc(
-    // this._getMailsUseCase,
+    this._getMailsUseCase,
     this._sendMailUseCase,
-    this._updateMailsUseCase,
-    this._getReceivedMailsUseCase,
+    this._updateReceivedMailUseCase,
+    this._getInboxMailsUseCase,
+    this._getSentMailsUseCase,
+    this._saveAsDraftUseCase,
   ) : super(const RemoteMailLoading()) {
     on<GetInboxMails>(onGetInboxMails);
+    on<GetSentMails>(onGetSentMails);
     on<GetStarredMails>(onGetStarredMails);
     on<GetDraftMails>(onGetDraftMails);
     on<GetTrashMails>(onGetTrashMails);
     on<SendMail>(onSendMail);
-    on<UpdateMail>(onUpdateMail);
+    on<SaveAsDraft>(onSaveAsDraft);
+    on<UpdateReceivedMail>(onUpdateReceivedMail);
   }
 
-  void onUpdateMail(
-    UpdateMail updateMail,
+  void onUpdateReceivedMail(
+    UpdateReceivedMail updateReceivedMail,
     Emitter<RemoteMailState> emit,
   ) async {
-    final dataState = await _updateMailsUseCase(params: updateMail.fields);
+    final currentState = state;
 
-    if (dataState is DataSuccess) {
-      emit(const RemoteMailDone(null));
-    }
+    if (currentState is RemoteMailInboxDone &&
+        currentState.inboxMails != null) {
+      final updatedMails = List<MailEntity>.from(currentState.inboxMails!);
 
-    if (dataState is DataFailed) {
-      emit(RemoteMailError(dataState.error!));
+      final index = updatedMails.indexWhere(
+        (mail) => mail.id == updateReceivedMail.fields!.mailId,
+      );
+
+      if (index != -1) {
+        final updatedMail = updatedMails[index].copyWith(
+          isStarred: updateReceivedMail.fields?.isStarred,
+        );
+
+        updatedMails[index] = updatedMail;
+
+        emit(RemoteMailInboxDone(updatedMails));
+
+        final dataState = await _updateReceivedMailUseCase(
+          params: updateReceivedMail.fields,
+        );
+
+        if (dataState is DataFailed) {
+          emit(RemoteMailError(dataState.error!));
+        }
+      } else {
+        emit(RemoteMailError(Exception("No email found")));
+      }
+    } else {
+      emit(RemoteMailError(Exception("Invalid state for update")));
     }
   }
 
@@ -59,16 +91,36 @@ class RemoteMailBloc extends Bloc<RemoteMailEvent, RemoteMailState> {
     }
   }
 
+  void onSaveAsDraft(
+    SaveAsDraft saveAsDraft,
+    Emitter<RemoteMailState> emit,
+  ) async {
+    final dataState = await _saveAsDraftUseCase(params: saveAsDraft.mail);
+
+    if (dataState is DataSuccess) {
+      emit(const SaveAsDraftDone());
+    }
+
+    if (dataState is DataFailed) {
+      emit(RemoteMailError(dataState.error!));
+    }
+  }
+
   void onGetInboxMails(
     GetInboxMails getInboxMails,
     Emitter<RemoteMailState> emit,
   ) async {
-    await _handleGetMails(
-      GetMailsParams(
-        isInTrash: false,
-        isDraft: false,
+    emit(const RemoteMailLoading());
+
+    await emit.forEach(
+      _getInboxMailsUseCase(
+        params: GetMailsParams(
+          isInTrash: false,
+        ),
       ),
-      emit,
+      onData: (mails) {
+        return RemoteMailInboxDone(mails);
+      },
     );
   }
 
@@ -76,62 +128,75 @@ class RemoteMailBloc extends Bloc<RemoteMailEvent, RemoteMailState> {
     GetStarredMails getStarredMailsMails,
     Emitter<RemoteMailState> emit,
   ) async {
-    await _handleGetMails(
-      GetMailsParams(
+    emit(const RemoteMailLoading());
+
+    final dataState = await _getMailsUseCase(
+      params: GetMailsParams(
         isInTrash: false,
         isStarred: true,
       ),
-      emit,
     );
+
+    if (dataState is DataSuccess) {
+      emit(RemoteMailStarredDone(dataState.data));
+    }
+
+    if (dataState is DataFailed) {
+      emit(RemoteMailError(dataState.error!));
+    }
+  }
+
+  void onGetSentMails(
+    GetSentMails getSentMails,
+    Emitter<RemoteMailState> emit,
+  ) async {
+    emit(const RemoteMailLoading());
+
+    final dataState = await _getSentMailsUseCase(
+      params: GetSentMailsParams(
+        isDraft: false,
+      ),
+    );
+
+    if (dataState is DataSuccess) {
+      emit(RemoteMailSentDone(dataState.data));
+    }
+
+    if (dataState is DataFailed) {
+      emit(RemoteMailError(dataState.error!));
+    }
   }
 
   void onGetDraftMails(
     GetDraftMails getDraftMails,
     Emitter<RemoteMailState> emit,
   ) async {
-    await _handleGetMails(
-      GetMailsParams(
-        isInTrash: false,
+    emit(const RemoteMailLoading());
+
+    final dataState = await _getSentMailsUseCase(
+      params: GetSentMailsParams(
         isDraft: true,
       ),
-      emit,
     );
+
+    if (dataState is DataSuccess) {
+      emit(RemoteMailSentDone(dataState.data));
+    }
+
+    if (dataState is DataFailed) {
+      emit(RemoteMailError(dataState.error!));
+    }
   }
 
   void onGetTrashMails(
     GetTrashMails getTrashMails,
     Emitter<RemoteMailState> emit,
   ) async {
-    await _handleGetMails(
-      GetMailsParams(
-        isInTrash: true,
-      ),
-      emit,
-    );
-  }
-
-  Future<void> _handleGetMails(
-    GetMailsParams params,
-    Emitter<RemoteMailState> emit,
-  ) async {
-    emit(const RemoteMailLoading());
-
-    await emit.forEach(
-      _getReceivedMailsUseCase(params: params),
-      onData: (mails) {
-        log(mails.toString());
-        return RemoteMailDone(mails);
-      },
-    );
-
-    // final dataState = await _getMailsUseCase(params: params);
-
-    // if (dataState is DataSuccess) {
-    //   emit(RemoteMailDone(dataState.data));
-    // }
-
-    // if (dataState is DataFailed) {
-    //   emit(RemoteMailError(dataState.error!));
-    // }
+    // await _handleGetMails(
+    //   GetMailsParams(
+    //     isInTrash: true,
+    //   ),
+    //   emit,
+    // );
   }
 }

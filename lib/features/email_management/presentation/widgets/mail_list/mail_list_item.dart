@@ -5,7 +5,9 @@ import 'package:gmail_app/features/email_management/presentation/widgets/mail_li
 import 'package:gmail_app/features/email_management/presentation/widgets/mail_list/star_toggle_button.dart';
 
 class MailListItem extends StatelessWidget {
+  final bool? isDraft;
   final bool isStarred;
+  final bool isRead;
   final String name;
   final String? subject;
   final String? body;
@@ -14,7 +16,9 @@ class MailListItem extends StatelessWidget {
 
   const MailListItem({
     super.key,
-    this.isStarred = false,
+    this.isDraft,
+    required this.isStarred,
+    required this.isRead,
     required this.name,
     this.subject,
     this.body,
@@ -48,12 +52,14 @@ class MailListItem extends StatelessWidget {
                     MailListItemText(
                       text: name,
                       fontSize: 16,
-                      isRead: true,
+                      isRead: isRead,
+                      isDraft: isDraft,
                     ),
                     MailListItemText(
                       text: DateTimeUtil.formatBasedOnTodayOrYesterday(sentAt),
                       fontSize: 13,
                       fontWeight: FontWeight.w400,
+                      isRead: isRead,
                     ),
                   ],
                 ),
@@ -69,7 +75,7 @@ class MailListItem extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           MailListItemText(
-                            isRead: true,
+                            isRead: isRead,
                             text: subject == null || subject!.isEmpty
                                 ? "(no subject)"
                                 : subject!,

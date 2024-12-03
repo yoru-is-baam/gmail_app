@@ -3,7 +3,6 @@ import 'package:gmail_app/features/email_management/domain/entities/mail.dart';
 
 class MailModel extends MailEntity {
   final String userId;
-  final List<String>? labelIds;
 
   MailModel({
     super.id,
@@ -15,16 +14,37 @@ class MailModel extends MailEntity {
     super.isRead,
     super.isInTrash,
     required this.userId,
-    this.labelIds,
+    super.labelIds,
     super.createdAt,
   });
 
-  factory MailModel.fromDocument(
+  factory MailModel.fromDocument(DocumentSnapshot doc) {
+    var map = doc.data() as Map<String, dynamic>;
+
+    return MailModel(
+      id: doc.id,
+      subject: map['subject'],
+      body: map['body'],
+      attachments: map['attachments'] != null
+          ? List<String>.from(map['attachments'])
+          : null,
+      isStarred: map['isStarred'],
+      isRead: map['isRead'],
+      isDraft: map['isDraft'],
+      isInTrash: map['isInTrash'],
+      userId: map['userId'],
+      labelIds:
+          map['labelIds'] != null ? List<String>.from(map['labelIds']) : null,
+      createdAt: (map['createdAt'] as Timestamp).toDate(),
+    );
+  }
+
+  factory MailModel.fromDocuments(
     DocumentSnapshot senderDoc,
     DocumentSnapshot recipientDoc,
   ) {
     var senderMap = senderDoc.data() as Map<String, dynamic>;
-    var recipientMap = senderDoc.data() as Map<String, dynamic>;
+    var recipientMap = recipientDoc.data() as Map<String, dynamic>;
 
     return MailModel(
       id: senderDoc.id,

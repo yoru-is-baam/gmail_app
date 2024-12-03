@@ -1,12 +1,10 @@
 import 'dart:async';
-import 'dart:developer';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:gmail_app/core/constants/collections.dart';
 import 'package:gmail_app/core/session_manager.dart';
 import 'package:gmail_app/features/email_management/data/models/mail.dart';
 import 'package:gmail_app/features/email_management/data/models/recipient_mail.dart';
 import 'package:gmail_app/features/email_management/data/models/sender_mail.dart';
-import 'package:rxdart/rxdart.dart';
 
 class MailService {
   final FirebaseFirestore _firestore;
@@ -15,111 +13,163 @@ class MailService {
 
   MailService(this._firestore);
 
-  Future<List<MailModel>> getMails({
-    bool? isStarred,
-    bool? isDraft,
-    bool? isInTrash,
-  }) async {
-    var queryTo = _firestore
+  Future<List<MailModel>> getSentMails({bool? isDraft}) async {
+    var querySentMails = _firestore
         .collection(senderMailCollection)
-        .where("to", arrayContains: email);
-
-    var queryCc = _firestore
-        .collection(senderMailCollection)
-        .where("cc", arrayContains: email);
-
-    var queryBcc = _firestore
-        .collection(senderMailCollection)
-        .where("bcc", arrayContains: email);
+        .where("userId", isEqualTo: userId);
 
     if (isDraft != null) {
-      queryTo = queryTo.where("isDraft", isEqualTo: isDraft);
-      queryCc = queryCc.where("isDraft", isEqualTo: isDraft);
-      queryBcc = queryBcc.where("isDraft", isEqualTo: isDraft);
+      querySentMails = querySentMails.where(
+        "isDraft",
+        isEqualTo: isDraft,
+      );
     }
 
-    if (isInTrash != null) {
-      queryTo = queryTo.where("isInTrash", isEqualTo: isInTrash);
-      queryCc = queryCc.where("isInTrash", isEqualTo: isInTrash);
-      queryBcc = queryBcc.where("isInTrash", isEqualTo: isInTrash);
-    }
+    final querySentMailsResult = await querySentMails.get();
 
-    if (isStarred != null) {
-      queryTo = queryTo.where("isStarred", isEqualTo: isStarred);
-      queryCc = queryCc.where("isStarred", isEqualTo: isStarred);
-      queryBcc = queryBcc.where("isStarred", isEqualTo: isStarred);
-    }
-
-    final queryToResult = await queryTo.get();
-    final queryCcResult = await queryCc.get();
-    final queryBccResult = await queryBcc.get();
-
-    final allDocs = {
-      ...queryToResult.docs,
-      ...queryCcResult.docs,
-      ...queryBccResult.docs,
-    };
-
-    final mails = allDocs.map((doc) {
-      return MailModel.fromDocument(doc, doc);
-    }).toList();
+    final mails = querySentMailsResult.docs.map(
+      (senderDoc) {
+        return MailModel.fromDocument(senderDoc);
+      },
+    ).toList();
 
     mails.sort((a, b) => b.createdAt!.compareTo(a.createdAt!));
 
     return mails;
   }
 
-  Stream<List<MailModel>> getReceivedMails({
+  Future<List<MailModel>> getMails({
     bool? isStarred,
     bool? isDraft,
     bool? isInTrash,
-  }) {
-    var queryReceivedMails = _firestore
+  }) async {
+    var querySenderMails = _firestore
+        .collection(senderMailCollection)
+        .where("userId", isEqualTo: userId);
+    var queryRecipientMails = _firestore
         .collection(recipientMailCollection)
         .where("userId", isEqualTo: email);
 
     if (isDraft != null) {
-      queryReceivedMails =
-          queryReceivedMails.where("isDraft", isEqualTo: isDraft);
+      querySenderMails = querySenderMails.where(
+        "isDraft",
+        isEqualTo: isDraft,
+      );
     }
 
     if (isInTrash != null) {
-      queryReceivedMails =
-          queryReceivedMails.where("isInTrash", isEqualTo: isInTrash);
+      querySenderMails = querySenderMails.where(
+        "isInTrash",
+        isEqualTo: isInTrash,
+      );
+      queryRecipientMails = queryRecipientMails.where(
+        "isInTrash",
+        isEqualTo: isInTrash,
+      );
     }
 
     if (isStarred != null) {
-      queryReceivedMails =
-          queryReceivedMails.where("isStarred", isEqualTo: isStarred);
+      querySenderMails = querySenderMails.where(
+        "isStarred",
+        isEqualTo: isStarred,
+      );
+      queryRecipientMails = queryRecipientMails.where(
+        "isStarred",
+        isEqualTo: isStarred,
+      );
     }
 
-    final receivedMailStream = queryReceivedMails.snapshots();
+    final List<MailModel> mails = [];
 
-    return receivedMailStream.switchMap((querySnapshot) async* {
-      final mailIds = querySnapshot.docs.map((doc) => doc["mailId"]).toList();
+    final queryRecipientMailsResult = await queryRecipientMails.get();
+    final querySenderMailsResult = await querySenderMails.get();
 
-      final senderMailQuery = _firestore
+    for (var senderDoc in querySenderMailsResult.docs) {
+      mails.add(MailModel.fromDocument(senderDoc));
+    }
+
+    final mailIds =
+        queryRecipientMailsResult.docs.map((doc) => doc.id).toList();
+
+    if (mailIds.isNotEmpty) {
+      final querySenderMailsResultByMailIdsFromRecipientMails = await _firestore
           .collection(senderMailCollection)
-          .where(FieldPath.documentId, whereIn: mailIds);
+          .where(FieldPath.documentId, whereIn: mailIds)
+          .get();
 
-      final senderMailSnapshot = await senderMailQuery.get();
+      for (var recipientDoc in queryRecipientMailsResult.docs) {
+        final mailId = recipientDoc.id;
 
-      final mails = senderMailSnapshot.docs.map((senderDoc) {
-        final recipientDoc = querySnapshot.docs.firstWhere(
-          (doc) => doc.id == senderDoc.id,
+        final senderDoc =
+            querySenderMailsResultByMailIdsFromRecipientMails.docs.firstWhere(
+          (doc) => doc.id == mailId,
         );
-        return MailModel.fromDocument(
-          senderDoc,
-          recipientDoc,
+
+        mails.add(MailModel.fromDocuments(senderDoc, recipientDoc));
+      }
+    }
+
+    mails.sort((a, b) => b.createdAt!.compareTo(a.createdAt!));
+
+    return mails;
+  }
+
+  Stream<List<MailModel>> getInboxMails({
+    bool? isStarred,
+    bool? isDraft,
+    bool? isInTrash,
+  }) {
+    var queryInboxMails = _firestore
+        .collection(recipientMailCollection)
+        .where("userId", isEqualTo: email);
+
+    if (isDraft != null) {
+      queryInboxMails = queryInboxMails.where(
+        "isDraft",
+        isEqualTo: isDraft,
+      );
+    }
+
+    if (isInTrash != null) {
+      queryInboxMails = queryInboxMails.where(
+        "isInTrash",
+        isEqualTo: isInTrash,
+      );
+    }
+
+    if (isStarred != null) {
+      queryInboxMails = queryInboxMails.where(
+        "isStarred",
+        isEqualTo: isStarred,
+      );
+    }
+
+    return queryInboxMails.snapshots().map(
+      (querySnapshot) {
+        final mailIds = querySnapshot.docs.map((doc) => doc.id).toList();
+
+        return _firestore
+            .collection(senderMailCollection)
+            .where(FieldPath.documentId, whereIn: mailIds)
+            .get()
+            .then(
+          (senderMailSnapshot) {
+            final mails = senderMailSnapshot.docs.map(
+              (senderDoc) {
+                final recipientDoc = querySnapshot.docs.firstWhere(
+                  (doc) => doc.id == senderDoc.id,
+                );
+                return MailModel.fromDocuments(senderDoc, recipientDoc);
+              },
+            ).toList();
+
+            mails.sort((a, b) => b.createdAt!.compareTo(a.createdAt!));
+
+            return mails;
+          },
         );
-      }).toList();
-
-      log(mails.toString());
-
-      mails.sort((a, b) => b.createdAt!.compareTo(a.createdAt!));
-
-      yield mails;
-    });
+      },
+    ).asyncMap((future) => future);
   }
 
   Future<void> sendMail(SenderMailModel mail) async {
@@ -147,10 +197,26 @@ class MailService {
     await batch.commit();
   }
 
-  Future<void> updateMail(String mailId, Map<String, dynamic> fields) async {
+  Future<void> updateReceivedMail(
+    String mailId,
+    Map<String, dynamic> fields,
+  ) async {
     await _firestore
-        .collection(senderMailCollection)
+        .collection(recipientMailCollection)
         .doc(mailId)
         .update(fields);
+  }
+
+  Future<void> saveAsDraft(SenderMailModel mail) async {
+    final senderMailDocRef = mail.id != null
+        ? _firestore.collection(senderMailCollection).doc(mail.id)
+        : _firestore.collection(senderMailCollection).doc();
+
+    final draftMail = mail.copyWith(
+      isDraft: true,
+      createdAt: mail.createdAt ?? DateTime.now(),
+    );
+
+    await senderMailDocRef.set(draftMail.toMap(), SetOptions(merge: true));
   }
 }

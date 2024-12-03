@@ -8,12 +8,14 @@ abstract class MailRepository {
     bool? isDraft,
     bool? isInTrash,
   });
+  Future<DataState<List<MailEntity>>> getSentMails({bool? isDraft});
   Future<DataState<void>> sendMail(SenderMailEntity mail);
-  Future<DataState<void>> updateMail({
+  Future<DataState<void>> saveAsDraft(SenderMailEntity mail);
+  Future<DataState<void>> updateReceivedMail({
     required String mailId,
     required Map<String, dynamic> fields,
   });
-  Stream<List<MailEntity>> getReceivedMails({
+  Stream<List<MailEntity>> getInboxMails({
     bool? isStarred,
     bool? isDraft,
     bool? isInTrash,

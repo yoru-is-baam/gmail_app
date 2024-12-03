@@ -4,7 +4,6 @@ import 'package:gmail_app/features/email_management/domain/entities/sender_mail.
 
 class SenderMailModel extends SenderMailEntity {
   final String userId;
-  final List<String>? labelIds;
 
   SenderMailModel({
     super.id,
@@ -19,7 +18,7 @@ class SenderMailModel extends SenderMailEntity {
     super.isRead,
     super.isInTrash,
     required this.userId,
-    this.labelIds,
+    super.labelIds,
     super.createdAt,
   });
 
@@ -84,6 +83,41 @@ class SenderMailModel extends SenderMailEntity {
       userId: SessionManager.currentUserId!,
       labelIds: labelIds,
       createdAt: entity.createdAt,
+    );
+  }
+
+  @override
+  SenderMailModel copyWith({
+    String? id,
+    List<String>? to,
+    List<String>? cc,
+    List<String>? bcc,
+    String? subject,
+    String? body,
+    List<String>? attachments,
+    bool? isDraft,
+    bool? isStarred,
+    bool? isRead,
+    bool? isInTrash,
+    List<String>? labelIds,
+    DateTime? createdAt,
+    String? userId,
+  }) {
+    return SenderMailModel(
+      id: id ?? this.id,
+      to: to ?? this.to,
+      cc: cc ?? this.cc,
+      bcc: bcc ?? this.bcc,
+      subject: subject ?? this.subject,
+      body: body ?? this.body,
+      attachments: attachments ?? this.attachments,
+      isDraft: isDraft ?? this.isDraft,
+      isStarred: isStarred ?? this.isStarred,
+      isRead: isRead ?? this.isRead,
+      isInTrash: isInTrash ?? this.isInTrash,
+      userId: userId ?? this.userId,
+      labelIds: labelIds ?? this.labelIds,
+      createdAt: createdAt ?? this.createdAt,
     );
   }
 }

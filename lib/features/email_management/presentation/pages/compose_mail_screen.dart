@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:gmail_app/features/email_management/presentation/bloc/fetch_mail_based_on_label.dart';
 import 'package:gmail_app/core/utils/show_custom_dialog.dart';
 import 'package:gmail_app/core/utils/show_custom_snackbar.dart';
+import 'package:gmail_app/core/utils/show_toast.dart';
 import 'package:gmail_app/features/email_management/domain/entities/sender_mail.dart';
+import 'package:gmail_app/features/email_management/presentation/bloc/label/label_cubit.dart';
 import 'package:gmail_app/features/email_management/presentation/bloc/mail/remote/remote_mail_bloc.dart';
 import 'package:gmail_app/features/email_management/presentation/bloc/mail/remote/remote_mail_event.dart';
 import 'package:gmail_app/features/email_management/presentation/bloc/mail/remote/remote_mail_state.dart';
@@ -17,14 +20,48 @@ class ComposeMailScreen extends HookWidget {
 
   @override
   Widget build(BuildContext context) {
+    final selectedLabel = context.watch<LabelCubit>().state.selectedLabel;
     final toRecipients = useState<List<String>>([]);
     final ccRecipients = useState<List<String>>([]);
     final bccRecipients = useState<List<String>>([]);
+    final isSaveDraftEnable = useState<bool>(false);
     final toController = useTextEditingController();
     final ccController = useTextEditingController();
     final bccController = useTextEditingController();
     final subjectController = useTextEditingController();
     final bodyController = useTextEditingController();
+
+    useEffect(() {
+      void toggleSaveDraft() {
+        final hasRecipient = toRecipients.value.isNotEmpty ||
+            ccRecipients.value.isNotEmpty ||
+            bccRecipients.value.isNotEmpty;
+        final hasContent =
+            subjectController.text.isNotEmpty || bodyController.text.isNotEmpty;
+
+        isSaveDraftEnable.value = hasRecipient || hasContent;
+      }
+
+      toRecipients.addListener(toggleSaveDraft);
+      ccRecipients.addListener(toggleSaveDraft);
+      bccRecipients.addListener(toggleSaveDraft);
+      subjectController.addListener(toggleSaveDraft);
+      bodyController.addListener(toggleSaveDraft);
+
+      return () {
+        toRecipients.removeListener(toggleSaveDraft);
+        ccRecipients.removeListener(toggleSaveDraft);
+        bccRecipients.removeListener(toggleSaveDraft);
+        subjectController.removeListener(toggleSaveDraft);
+        bodyController.removeListener(toggleSaveDraft);
+      };
+    }, [
+      toRecipients,
+      ccRecipients,
+      bccRecipients,
+      subjectController,
+      bodyController
+    ]);
 
     final isAdvancedRecipientFormFieldOpen = useState<bool>(false);
 
@@ -46,7 +83,7 @@ class ComposeMailScreen extends HookWidget {
       String recipient,
     ) {
       if (recipient.isNotEmpty && !recipients.value.contains(recipient)) {
-        recipients.value = List.from(recipients.value)..add(recipient);
+        recipients.value = List.from(recipients.value)..add(recipient.trim());
       }
 
       controller.clear();
@@ -56,8 +93,12 @@ class ComposeMailScreen extends HookWidget {
       listener: (context, state) {
         if (state is RemoteMailSent) {
           Navigator.pop(context);
-          context.read<RemoteMailBloc>().add(const GetInboxMails());
+          fetchMailsBasedOnLabel(context, selectedLabel);
           showCustomSnackbar(context, "Sent mail successfully!");
+        } else if (state is SaveAsDraftDone) {
+          Navigator.pop(context);
+          fetchMailsBasedOnLabel(context, selectedLabel);
+          showToast("Message saved as draft.");
         } else if (state is RemoteMailError) {
           showCustomDialog(
             context,
@@ -104,7 +145,19 @@ class ComposeMailScreen extends HookWidget {
                   child: const Text('Discard'),
                 ),
                 PopupMenuItem<String>(
-                  onTap: () {},
+                  enabled: isSaveDraftEnable.value,
+                  onTap: () {
+                    final mail = SenderMailEntity(
+                      to: toRecipients.value,
+                      cc: ccRecipients.value,
+                      bcc: bccRecipients.value,
+                      subject: subjectController.text.trim(),
+                      body: bodyController.text.trim(),
+                      isDraft: true,
+                    );
+                    BlocProvider.of<RemoteMailBloc>(context)
+                        .add(SaveAsDraft(mail));
+                  },
                   child: const Text('Save draft'),
                 ),
                 PopupMenuItem<String>(

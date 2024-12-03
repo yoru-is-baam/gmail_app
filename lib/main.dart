@@ -3,6 +3,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gmail_app/config/routes/routes.dart';
 import 'package:gmail_app/config/theme/app_themes.dart';
+import 'package:gmail_app/features/email_management/presentation/bloc/label/label_cubit.dart';
 import 'package:gmail_app/features/email_management/presentation/bloc/mail/remote/remote_mail_bloc.dart';
 import 'package:gmail_app/features/email_management/presentation/pages/home_screen.dart';
 import 'package:gmail_app/injection_container.dart';
@@ -22,8 +23,15 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider<RemoteMailBloc>(
-      create: (_) => sl(),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider<RemoteMailBloc>(
+          create: (_) => sl(),
+        ),
+        BlocProvider<LabelCubit>(
+          create: (_) => sl(),
+        ),
+      ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
         theme: theme(),

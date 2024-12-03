@@ -2,6 +2,7 @@ import 'package:gmail_app/config/resources/date_state.dart';
 import 'package:gmail_app/core/usecase/usecase.dart';
 import 'package:gmail_app/features/email_management/domain/entities/mail.dart';
 import 'package:gmail_app/features/email_management/domain/repositories/mail_repository.dart';
+import 'package:gmail_app/features/email_management/domain/usecases/params/get_mails_params.dart';
 
 class GetMailsUseCase
     implements UseCase<DataState<List<MailEntity>>, GetMailsParams> {
@@ -17,16 +18,4 @@ class GetMailsUseCase
       isInTrash: params?.isInTrash,
     );
   }
-}
-
-class GetMailsParams {
-  final bool? isDraft;
-  final bool? isStarred;
-  final bool? isInTrash;
-
-  GetMailsParams({
-    this.isStarred,
-    this.isDraft,
-    this.isInTrash,
-  });
 }

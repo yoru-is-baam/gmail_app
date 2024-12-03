@@ -1,18 +1,22 @@
-import 'package:equatable/equatable.dart';
+import 'package:gmail_app/features/email_management/domain/entities/base_mail.dart';
 
-class RecipientMailEntity extends Equatable {
-  final String? id;
-  final bool isStarred;
-  final bool isRead;
-  final bool isInTrash;
-
-  const RecipientMailEntity({
-    this.id,
-    this.isStarred = false,
-    this.isRead = false,
-    this.isInTrash = false,
+class RecipientMailEntity extends BaseMailEntity {
+  RecipientMailEntity({
+    super.id,
+    super.isStarred,
+    super.isRead,
+    super.isInTrash,
+    super.labelIds,
+    super.createdAt,
   });
 
   @override
-  List<Object?> get props => [id, isStarred, isRead, isInTrash];
+  List<Object?> get props => [
+        id,
+        isStarred,
+        isRead,
+        isInTrash,
+        labelIds,
+        createdAt,
+      ];
 }

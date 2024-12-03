@@ -4,12 +4,13 @@ import 'package:gmail_app/features/email_management/domain/entities/recipient_ma
 class RecipientMailModel extends RecipientMailEntity {
   final String userId;
 
-  const RecipientMailModel({
+  RecipientMailModel({
     super.id,
     super.isStarred,
     super.isRead,
     super.isInTrash,
     required this.userId,
+    super.labelIds,
   });
 
   factory RecipientMailModel.fromDocument(DocumentSnapshot doc) {
@@ -20,6 +21,8 @@ class RecipientMailModel extends RecipientMailEntity {
       isStarred: map['isStarred'],
       isRead: map['isRead'],
       isInTrash: map['isInTrash'],
+      labelIds:
+          map['labelIds'] != null ? List<String>.from(map['labelIds']) : null,
       userId: map['userId'],
     );
   }
@@ -29,6 +32,7 @@ class RecipientMailModel extends RecipientMailEntity {
       'isStarred': isStarred,
       'isRead': isRead,
       'isInTrash': isInTrash,
+      'labelIds': labelIds,
       'userId': userId,
     };
   }
@@ -36,13 +40,14 @@ class RecipientMailModel extends RecipientMailEntity {
   factory RecipientMailModel.fromEntity(
     RecipientMailEntity entity,
     String userId,
-    String mailId,
+    List<String>? labelIds,
   ) {
     return RecipientMailModel(
       id: entity.id,
       isStarred: entity.isStarred,
       isRead: entity.isRead,
       isInTrash: entity.isInTrash,
+      labelIds: labelIds,
       userId: userId,
     );
   }
