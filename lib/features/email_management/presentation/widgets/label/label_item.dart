@@ -3,6 +3,7 @@ import 'package:gmail_app/features/email_management/presentation/widgets/label/l
 
 class LabelItem extends StatelessWidget {
   final IconData iconData;
+  final Color? color;
   final String title;
   final String? numberOfMails;
   final bool isActive;
@@ -13,6 +14,7 @@ class LabelItem extends StatelessWidget {
     required this.iconData,
     required this.title,
     this.numberOfMails,
+    this.color,
     this.isActive = false,
     required this.onTap,
   });
@@ -29,7 +31,7 @@ class LabelItem extends StatelessWidget {
           borderRadius: BorderRadius.circular(50),
           onTap: onTap,
           child: ListTile(
-            leading: Icon(iconData),
+            leading: Icon(iconData, color: color),
             title: LabelItemText(text: title),
             trailing: numberOfMails != null
                 ? LabelItemText(text: numberOfMails!)

@@ -10,6 +10,8 @@ class AppRoutes {
         return _materialRoute(const HomeScreen());
       case composeMailRoute:
         return _materialRoute(const ComposeMailScreen());
+      case settingRoute:
+        return _materialRoute(const HomeScreen());
       default:
         return _materialRoute(const HomeScreen());
     }

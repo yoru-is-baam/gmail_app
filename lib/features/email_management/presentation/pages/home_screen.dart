@@ -14,6 +14,7 @@ import 'package:gmail_app/features/email_management/presentation/bloc/label/labe
 import 'package:gmail_app/features/email_management/presentation/bloc/mail/remote/remote_mail_bloc.dart';
 import 'package:gmail_app/features/email_management/presentation/bloc/mail/remote/remote_mail_event.dart';
 import 'package:gmail_app/features/email_management/presentation/bloc/mail/remote/remote_mail_state.dart';
+import 'package:gmail_app/features/email_management/presentation/widgets/label/label_dialog.dart';
 import 'package:gmail_app/features/email_management/presentation/widgets/label/label_item.dart';
 import 'package:gmail_app/features/email_management/presentation/widgets/label/label_item_text.dart';
 import 'package:gmail_app/features/email_management/presentation/widgets/mail_list/mail_list.dart';
@@ -163,16 +164,30 @@ class _HomeScreenState extends State<HomeScreen> {
                 isActive: selectedLabel == Label.inbox,
                 onTap: () => changeSelectedLabel(context, Label.inbox),
               ),
-              const Padding(
-                padding: EdgeInsets.only(
-                  top: 30,
+              Padding(
+                padding: const EdgeInsets.only(
+                  top: 12,
                   left: 30,
                   right: 30,
                   bottom: 5,
                 ),
-                child: LabelItemText(
-                  text: "All labels",
-                  fontSize: 14,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const LabelItemText(
+                      text: "All labels",
+                      fontSize: 14,
+                    ),
+                    IconButton(
+                      onPressed: () => showDialog(
+                        context: context,
+                        builder: (context) => LabelDialog(),
+                      ),
+                      icon: const Icon(
+                        Icons.add_circle_outline_outlined,
+                      ),
+                    ),
+                  ],
                 ),
               ),
               LabelItem(
@@ -198,6 +213,27 @@ class _HomeScreenState extends State<HomeScreen> {
                 title: "Trash",
                 isActive: selectedLabel == Label.trash,
                 onTap: () => changeSelectedLabel(context, Label.trash),
+              ),
+              LabelItem(
+                color: Colors.pink[300],
+                iconData: Icons.label_outline_rounded,
+                title: "Recruitment",
+                onTap: () {},
+              ),
+              LabelItem(
+                color: Colors.cyan[400],
+                iconData: Icons.label_outline_rounded,
+                title: "Services",
+                onTap: () {},
+              ),
+              const Divider(
+                thickness: 0.6,
+                color: Color(0xFFa7acac),
+              ),
+              LabelItem(
+                iconData: Ionicons.settings_outline,
+                title: "Setting",
+                onTap: () {},
               ),
             ],
           ),
